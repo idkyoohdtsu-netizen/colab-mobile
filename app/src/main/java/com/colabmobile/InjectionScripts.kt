@@ -1,157 +1,147 @@
 package com.colabmobile
 
+/**
+ * JavaScript injected into every page after it loads.
+ *
+ * Goal: the page renders in full desktop layout (wide viewport + desktop UA)
+ * but touch targets are enlarged so fingers can hit them reliably.
+ * Font sizes are boosted so the shrunken desktop text stays readable.
+ */
 object InjectionScripts {
-    const val TOUCH_CSS = """
-        (function() {
-          var id = 'colab-mobile-native-style';
-          var old = document.getElementById(id);
-          if (old) old.remove();
-          var style = document.createElement('style');
-          style.id = id;
-          style.textContent = `
-            :root, html, body {
-              color-scheme: light !important;
-              background: #ffffff !important;
-              color: #202124 !important;
-            }
-            body {
-              min-width: 980px !important;
-            }
-            #top-toolbar, .notebook-toolbar, .colab-top-bar {
-              background-color: #ffffff !important;
-              color: #202124 !important;
-            }
-            colab-toolbar-button, .goog-toolbar-button, paper-icon-button,
-            .run-button, [data-type="toolbar-button"],
-            .notebook-toolbar paper-icon-button {
-              min-width: 52px !important;
-              min-height: 52px !important;
-              padding: 11px !important;
-            }
-            .run-button-container paper-icon-button,
-            .cell-execution-status paper-icon-button {
-              width: 48px !important;
-              height: 48px !important;
-              padding: 8px !important;
-            }
-            .goog-menuitem, paper-item, .colab-dropdown-menu paper-item {
-              min-height: 52px !important;
-              line-height: 52px !important;
-              padding: 0 18px !important;
-              font-size: 16px !important;
-            }
-            .CodeMirror, .cm-editor, .monaco-editor .view-lines {
-              font-size: 16px !important;
-              line-height: 1.65 !important;
-            }
-            ::-webkit-scrollbar { width: 14px; height: 14px; }
-            ::-webkit-scrollbar-thumb { background: #9aa0a6; border-radius: 7px; }
-            #notebook-container, .notebook-container {
-              max-width: none !important;
-              padding-left: 12px !important;
-              padding-right: 12px !important;
-            }
-            .cell { margin-top: 8px !important; margin-bottom: 8px !important; }
-            .output_area pre, .output pre { font-size: 15px !important; }
-            input[type="checkbox"] { width: 24px !important; height: 24px !important; }
-            a { padding-top: 6px !important; padding-bottom: 6px !important; }
-          `;
-          document.head.appendChild(style);
-        })();
-        true;
-    """
 
-    const val RUN_CELL = """
-        (function() {
-          var button = document.querySelector('colab-run-button paper-icon-button') ||
-            document.querySelector('[aria-label="Run cell"]') ||
-            document.querySelector('.run-button');
-          if (button) button.click();
-          else document.activeElement?.dispatchEvent(
-            new KeyboardEvent('keydown', {key:'Enter', shiftKey:true, bubbles:true})
-          );
-        })();
-        true;
-    """
+    /**
+     * Universal CSS injection – works on any website.
+     * Injected via evaluateJavascript() on every onPageFinished callback.
+     */
+    val UNIVERSAL_DESKTOP_CSS = """
+(function() {
+  var STYLE_ID = '__replit_mobile_patch__';
+  var old = document.getElementById(STYLE_ID);
+  if (old) old.remove();
 
-    const val RUN_ALL = """
-        (function() {
-          var button = document.querySelector('[aria-label="Run all"]') ||
-            document.querySelector('[data-tooltip="Run all"]');
-          if (button) { button.click(); return; }
-          var menu = document.querySelector('#runtime-menu-button');
-          if (menu) menu.click();
-        })();
-        true;
-    """
+  var s = document.createElement('style');
+  s.id = STYLE_ID;
+  s.textContent = `
+    /* ── Minimum body width keeps desktop layout intact ── */
+    body { min-width: 960px !important; }
 
-    const val INTERRUPT = """
-        (function() {
-          var button = document.querySelector('[aria-label="Interrupt execution"]') ||
-            document.querySelector('[data-tooltip="Interrupt execution"]');
-          if (button) button.click();
-        })();
-        true;
-    """
+    /* ── Scrollbars – thicker so fingers can grab them ── */
+    ::-webkit-scrollbar          { width: 16px !important; height: 16px !important; }
+    ::-webkit-scrollbar-thumb    { background: #9aa0a6 !important; border-radius: 8px !important; min-height: 40px !important; }
+    ::-webkit-scrollbar-track    { background: #f1f3f4 !important; }
 
-    const val RESTART = """
-        (function() {
-          var button = document.querySelector('[aria-label="Restart runtime"]') ||
-            document.querySelector('[data-tooltip="Restart runtime"]');
-          if (button) button.click();
-          else {
-            var menu = document.querySelector('#runtime-menu-button');
-            if (menu) menu.click();
-          }
-        })();
-        true;
-    """
-
-    const val OPEN_FILES = """
-        (function() {
-          var button = document.querySelector('[aria-label="Files"]') ||
-            document.querySelector('colab-filesview-button') ||
-            document.querySelector('[data-tooltip="Files"]');
-          if (button) button.click();
-        })();
-        true;
-    """
-
-    const val OPEN_TOC = """
-        (function() {
-          var button = document.querySelector('[aria-label="Table of contents"]') ||
-            document.querySelector('[data-tooltip="Table of contents"]');
-          if (button) button.click();
-        })();
-        true;
-    """
-
-    fun key(key: String, ctrl: Boolean = false, shift: Boolean = false, alt: Boolean = false): String {
-        val safeKey = key.replace("'", "\\'")
-        return """
-            (function() {
-              var el = document.activeElement;
-              if (!el) return;
-              var opts = {
-                key:'$safeKey', bubbles:true, cancelable:true,
-                ctrlKey:$ctrl, shiftKey:$shift, altKey:$alt
-              };
-              el.dispatchEvent(new KeyboardEvent('keydown', opts));
-              el.dispatchEvent(new KeyboardEvent('keypress', opts));
-              el.dispatchEvent(new KeyboardEvent('keyup', opts));
-            })();
-            true;
-        """
+    /* ── Interactive elements – minimum 48 × 48 dp touch target ── */
+    button, [role="button"], input[type="button"], input[type="submit"],
+    input[type="reset"], a[href], select, label,
+    [class*="toolbar"] [class*="button"],
+    [class*="icon-button"], paper-icon-button,
+    colab-toolbar-button, .goog-toolbar-button,
+    .run-button, [data-type="toolbar-button"] {
+      min-width:   48px !important;
+      min-height:  48px !important;
+      padding:     8px  !important;
+      box-sizing:  border-box !important;
     }
 
-    fun insert(text: String): String {
-        val escaped = text.replace("\\", "\\\\").replace("'", "\\'")
+    /* ── Dropdown / menu items ── */
+    .goog-menuitem, paper-item, [role="menuitem"],
+    [role="option"], li[class*="menu"] {
+      min-height:  52px !important;
+      line-height: 52px !important;
+      padding:     0 20px !important;
+      font-size:   15px !important;
+    }
+
+    /* ── Code editors ── */
+    .CodeMirror, .cm-editor, .cm-content,
+    .monaco-editor .view-lines,
+    .notebook-cell .CodeMirror {
+      font-size: 15px !important;
+      line-height: 1.6  !important;
+    }
+
+    /* ── General text ── */
+    p, span, div, td, th, li {
+      font-size: max(13px, 0.9em) !important;
+    }
+
+    /* ── Form inputs ── */
+    input[type="text"], input[type="email"], input[type="search"],
+    input[type="url"], textarea {
+      font-size:   16px !important;   /* prevents iOS/Android auto-zoom */
+      min-height:  44px !important;
+      padding:     8px  !important;
+    }
+
+    /* ── Checkboxes / radios ── */
+    input[type="checkbox"], input[type="radio"] {
+      width:  26px !important;
+      height: 26px !important;
+    }
+
+    /* ── Links ── */
+    a { padding-top: 4px !important; padding-bottom: 4px !important; }
+
+    /* ── Google Colab – specific overrides ── */
+    #top-toolbar, .notebook-toolbar, .colab-top-bar {
+      background-color: #fff !important;
+    }
+    .run-button-container paper-icon-button,
+    .cell-execution-status paper-icon-button {
+      width: 52px !important; height: 52px !important;
+    }
+    #notebook-container, .notebook-container {
+      max-width: none  !important;
+      padding-left:  10px !important;
+      padding-right: 10px !important;
+    }
+    .cell { margin-top: 6px !important; margin-bottom: 6px !important; }
+    .output_area pre, .output pre { font-size: 14px !important; }
+
+    /* ── Google Search ── */
+    .gNO89b, .FPdoLc input, input[name="q"] {
+      font-size: 18px !important;
+      height: 48px !important;
+    }
+  `;
+  document.head.appendChild(s);
+})();
+true;
+    """.trimIndent()
+
+    // ── Colab quick-action helpers ────────────────────────────────────────────
+
+    const val RUN_CELL = """
+(function() {
+  var b = document.querySelector('colab-run-button paper-icon-button')
+       || document.querySelector('[aria-label="Run cell"]')
+       || document.querySelector('.run-button');
+  if (b) b.click();
+  else document.activeElement?.dispatchEvent(
+    new KeyboardEvent('keydown', {key:'Enter',shiftKey:true,bubbles:true}));
+})(); true;"""
+
+    const val RUN_ALL = """
+(function() {
+  var b = document.querySelector('[aria-label="Run all"]')
+       || document.querySelector('[data-tooltip="Run all"]');
+  if (b) { b.click(); return; }
+  document.querySelector('#runtime-menu-button')?.click();
+})(); true;"""
+
+    const val INTERRUPT = """
+(function() {
+  (document.querySelector('[aria-label="Interrupt execution"]')
+|| document.querySelector('[data-tooltip="Interrupt execution"]'))?.click();
+})(); true;"""
+
+    fun key(key: String, ctrl: Boolean = false, shift: Boolean = false): String {
+        val k = key.replace("'", "\\'")
         return """
-            (function() {
-              var value = '$escaped';
-              if (document.execCommand) document.execCommand('insertText', false, value);
-            })();
-            true;
-        """
+(function(){
+  var el=document.activeElement; if(!el) return;
+  var o={key:'$k',bubbles:true,cancelable:true,ctrlKey:$ctrl,shiftKey:$shift};
+  ['keydown','keypress','keyup'].forEach(t=>el.dispatchEvent(new KeyboardEvent(t,o)));
+})(); true;""".trimIndent()
     }
 }

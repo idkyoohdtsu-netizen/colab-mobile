@@ -11,13 +11,19 @@ android {
         applicationId = "com.colabmobile"
         minSdk = 23
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.1.0"
+        versionCode = 3
+        versionName = "3.0.0"
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            isDebuggable = true
+        }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -32,5 +38,9 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    buildFeatures {
+        buildConfig = false
     }
 }

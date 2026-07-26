@@ -1,52 +1,68 @@
-name: Build Android Kotlin APK
+name: Build APK
 
 on:
   push:
-    branches: [main]
-    tags: ["v*"]
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
+    name: Build Debug APK
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "17"
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: "8.7"
+          gradle-version: '8.9'
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+      - name: Build Debug APK
+        run: gradle assembleDebug --no-daemon --stacktrace
 
-      - name: Upload APK
+      - name: Rename APK
+        run: |
+          mkdir -p release
+          cp app/build/outputs/apk/debug/app-debug.apk release/ColabMobile-debug.apk
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: colab-mobile-kotlin-debug-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: ColabMobile-APK
+          path: release/ColabMobile-debug.apk
           retention-days: 30
 
-      - name: Create release APK
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Create Release (on push to main)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          name: Colab Mobile Kotlin ${{ github.ref_name }}
-          files: app/build/outputs/apk/debug/app-debug.apk
+          tag_name: build-${{ github.run_number }}
+          name: "Build #${{ github.run_number }}"
           body: |
-            Native Kotlin Android build of Colab Mobile.
+            🤖 Tự động build từ commit `${{ github.sha }}`
 
-            Install the APK on Android and open Google Colab in desktop mode.
+            📱 **Cách cài APK:**
+            1. Tải file `ColabMobile-debug.apk` bên dưới
+            2. Vào Cài đặt > Bảo mật > Bật "Cài từ nguồn không rõ"
+            3. Mở file APK để cài đặt
+
+            ✨ **Tính năng:**
+            - Hiển thị giao diện máy tính (desktop) trên điện thoại
+            - Nút bấm được phóng to cho ngón tay
+            - Thanh URL + nút Quay lại / Tiến / Làm mới
+            - Hỗ trợ Google Colab, Drive, tất cả trang web
+          files: release/ColabMobile-debug.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
