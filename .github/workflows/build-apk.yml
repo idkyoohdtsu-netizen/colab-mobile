@@ -3,6 +3,8 @@ name: Build Android APK
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -48,7 +50,7 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Create GitHub Release on tag
+      - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
@@ -60,6 +62,6 @@ jobs:
             Touch-optimized Google Colab Android app.
 
             ### Cài đặt
-            1. Tải file `app-debug.apk`
-            2. Bật **Cài đặt > Bảo mật > Nguồn không xác định** trên điện thoại
+            1. Tải file `app-debug.apk` bên dưới
+            2. Bật **Cài đặt → Bảo mật → Nguồn không xác định**
             3. Cài APK và mở app
