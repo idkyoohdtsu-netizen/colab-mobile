@@ -28,12 +28,19 @@ class MainActivity : android.app.Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestWindowFeature(Window.FEATURE_NO_TITLE)
-
         window.statusBarColor = Color.parseColor("#1a73e8")
         window.navigationBarColor = Color.parseColor("#f8f9fa")
-
         setContentView(buildLayout())
         webView.loadUrl(ColabWebView.HOME_URL)
+    }
+
+    // ── After returning from AuthActivity (Google sign-in) ────────────────────────
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == AuthActivity.REQUEST_CODE) {
+            // Reload to pick up freshly stored auth cookies
+            webView.reloadAfterAuth()
+        }
     }
 
     // ── Root layout ──────────────────────────────────────────────────────────────
@@ -42,16 +49,14 @@ class MainActivity : android.app.Activity() {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.WHITE)
         }
-
         root.addView(buildTopBar(),    lp(MATCH, dp(56)))
         root.addView(buildProgress(),  lp(MATCH, dp(3)))
         root.addView(buildWebView(),   lp(MATCH, 0, 1f))
         root.addView(buildBottomBar(), lp(MATCH, dp(64)))
-
         return root
     }
 
-    // ── Top bar: [◀] [▶] [URL …] [↻] ────────────────────────────────────────────
+    // ── Top bar ───────────────────────────────────────────────────────────────────
     private fun buildTopBar(): LinearLayout {
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -60,8 +65,8 @@ class MainActivity : android.app.Activity() {
             elevation = dp(4).toFloat()
         }
 
-        btnBack = iconText("◀", "Quay lại") { if (webView.canGoBack()) webView.goBack() }
-        btnFwd  = iconText("▶", "Tiến")     { if (webView.canGoForward()) webView.goForward() }
+        btnBack = iconTv("◀", "Quay lại") { if (webView.canGoBack()) webView.goBack() }
+        btnFwd  = iconTv("▶", "Tiến")     { if (webView.canGoForward()) webView.goForward() }
         btnBack.alpha = 0.35f
         btnFwd.alpha  = 0.35f
 
@@ -70,18 +75,17 @@ class MainActivity : android.app.Activity() {
             textSize = 14f
             setTextColor(Color.WHITE)
             setHintTextColor(Color.parseColor("#aaddff"))
-            hint = "Nhập URL hoặc từ khoá…"
+            hint = "Nhập URL hoặc tìm kiếm…"
             background = null
             imeOptions = EditorInfo.IME_ACTION_GO
             setOnEditorActionListener { _, actionId, event ->
                 val go = actionId == EditorInfo.IME_ACTION_GO ||
-                    (event?.keyCode == KeyEvent.KEYCODE_ENTER &&
-                     event.action == KeyEvent.ACTION_DOWN)
+                    (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)
                 if (go) { navigate(); true } else false
             }
         }
 
-        val refresh = iconText("↻", "Làm mới") {
+        val refresh = iconTv("↻", "Làm mới") {
             if (webView.progress < 100) webView.stopLoading() else webView.reload()
         }
 
@@ -94,15 +98,11 @@ class MainActivity : android.app.Activity() {
         return bar
     }
 
-    // ── Progress bar ─────────────────────────────────────────────────────────────
+    // ── Progress bar ──────────────────────────────────────────────────────────────
     private fun buildProgress(): ProgressBar {
         progressBar = ProgressBar(
             this, null, android.R.attr.progressBarStyleHorizontal
-        ).apply {
-            max = 100
-            isIndeterminate = false
-            visibility = View.GONE
-        }
+        ).apply { max = 100; isIndeterminate = false; visibility = View.GONE }
         return progressBar
     }
 
@@ -123,7 +123,7 @@ class MainActivity : android.app.Activity() {
         return webView
     }
 
-    // ── Bottom bar: 5 large touch buttons ────────────────────────────────────────
+    // ── Bottom bar ────────────────────────────────────────────────────────────────
     private fun buildBottomBar(): LinearLayout {
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -145,7 +145,7 @@ class MainActivity : android.app.Activity() {
             val ripple = ta.getDrawable(0)
             ta.recycle()
 
-            val btn = LinearLayout(this).apply {
+            val cell = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
                 isClickable = true
@@ -164,26 +164,23 @@ class MainActivity : android.app.Activity() {
                     gravity = Gravity.CENTER
                 })
             }
-            bar.addView(btn, lp(0, MATCH, 1f))
+            bar.addView(cell, lp(0, MATCH, 1f))
         }
         return bar
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
-    /** A white text button used in the top bar */
-    private fun iconText(icon: String, desc: String, action: () -> Unit): TextView {
-        return TextView(this).apply {
-            text = icon
-            textSize = 18f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            isClickable = true
-            isFocusable = true
-            background = null
-            contentDescription = desc
-            setOnClickListener { action() }
-        }
+    private fun iconTv(icon: String, desc: String, action: () -> Unit) = TextView(this).apply {
+        text = icon
+        textSize = 18f
+        setTextColor(Color.WHITE)
+        gravity = Gravity.CENTER
+        isClickable = true
+        isFocusable = true
+        background = null
+        contentDescription = desc
+        setOnClickListener { action() }
     }
 
     private fun navigate() {
@@ -194,8 +191,8 @@ class MainActivity : android.app.Activity() {
             else -> "https://www.google.com/search?q=${android.net.Uri.encode(raw)}"
         }
         webView.loadUrl(url)
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(urlInput.windowToken, 0)
+        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+            .hideSoftInputFromWindow(urlInput.windowToken, 0)
         urlInput.clearFocus()
     }
 
@@ -209,10 +206,7 @@ class MainActivity : android.app.Activity() {
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density + 0.5f).toInt()
-
-    private fun lp(w: Int, h: Int, weight: Float = 0f) =
-        LinearLayout.LayoutParams(w, h, weight)
-
+    private fun lp(w: Int, h: Int, weight: Float = 0f) = LinearLayout.LayoutParams(w, h, weight)
     private val MATCH = LinearLayout.LayoutParams.MATCH_PARENT
     private val WRAP  = LinearLayout.LayoutParams.WRAP_CONTENT
 

@@ -12,6 +12,7 @@
         android:theme="@style/AppTheme"
         android:forceDarkAllowed="false"
         android:usesCleartextTraffic="false">
+
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|uiMode"
@@ -23,5 +24,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Dedicated Activity for Google OAuth to bypass WebView sign-in block -->
+        <activity
+            android:name=".AuthActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
     </application>
 </manifest>
