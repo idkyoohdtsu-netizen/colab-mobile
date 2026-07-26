@@ -17,15 +17,7 @@
       "softwareKeyboardLayoutMode": "pan"
     },
     "plugins": [
-      "expo-router",
-      [
-        "react-native-webview",
-        {
-          "android": {
-            "allowMixedContent": true
-          }
-        }
-      ]
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true
