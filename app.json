@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Colab Mobile",
+    "slug": "colab-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "colabmobile",
+    "userInterfaceStyle": "dark",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.colabmobile.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A1A2E"
+      },
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "react-native-webview",
+        {
+          "android": {
+            "allowMixedContent": true
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
