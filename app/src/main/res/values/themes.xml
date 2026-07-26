@@ -6,6 +6,5 @@
         <item name="android:colorBackground">@color/background</item>
         <item name="android:statusBarColor">@color/primary</item>
         <item name="android:navigationBarColor">@color/surface</item>
-        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
     </style>
 </resources>
