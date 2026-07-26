@@ -9,40 +9,52 @@ object InjectionScripts {
           var style = document.createElement('style');
           style.id = id;
           style.textContent = `
+            :root, html, body {
+              color-scheme: light !important;
+              background: #ffffff !important;
+              color: #202124 !important;
+            }
+            body {
+              min-width: 980px !important;
+            }
+            #top-toolbar, .notebook-toolbar, .colab-top-bar {
+              background-color: #ffffff !important;
+              color: #202124 !important;
+            }
             colab-toolbar-button, .goog-toolbar-button, paper-icon-button,
             .run-button, [data-type="toolbar-button"],
             .notebook-toolbar paper-icon-button {
-              min-width: 48px !important;
-              min-height: 48px !important;
-              padding: 10px !important;
+              min-width: 52px !important;
+              min-height: 52px !important;
+              padding: 11px !important;
             }
             .run-button-container paper-icon-button,
             .cell-execution-status paper-icon-button {
-              width: 42px !important;
-              height: 42px !important;
-              padding: 7px !important;
+              width: 48px !important;
+              height: 48px !important;
+              padding: 8px !important;
             }
             .goog-menuitem, paper-item, .colab-dropdown-menu paper-item {
-              min-height: 48px !important;
-              line-height: 48px !important;
-              padding: 0 16px !important;
-              font-size: 15px !important;
+              min-height: 52px !important;
+              line-height: 52px !important;
+              padding: 0 18px !important;
+              font-size: 16px !important;
             }
             .CodeMirror, .cm-editor, .monaco-editor .view-lines {
-              font-size: 14px !important;
-              line-height: 1.6 !important;
+              font-size: 16px !important;
+              line-height: 1.65 !important;
             }
-            ::-webkit-scrollbar { width: 12px; height: 12px; }
-            ::-webkit-scrollbar-thumb { background: #667085; border-radius: 6px; }
+            ::-webkit-scrollbar { width: 14px; height: 14px; }
+            ::-webkit-scrollbar-thumb { background: #9aa0a6; border-radius: 7px; }
             #notebook-container, .notebook-container {
-              max-width: 100% !important;
-              padding-left: 6px !important;
-              padding-right: 6px !important;
+              max-width: none !important;
+              padding-left: 12px !important;
+              padding-right: 12px !important;
             }
-            .cell { margin-top: 5px !important; margin-bottom: 5px !important; }
-            .output_area pre, .output pre { font-size: 13px !important; }
-            input[type="checkbox"] { width: 22px !important; height: 22px !important; }
-            a { padding-top: 4px !important; padding-bottom: 4px !important; }
+            .cell { margin-top: 8px !important; margin-bottom: 8px !important; }
+            .output_area pre, .output pre { font-size: 15px !important; }
+            input[type="checkbox"] { width: 24px !important; height: 24px !important; }
+            a { padding-top: 6px !important; padding-bottom: 6px !important; }
           `;
           document.head.appendChild(style);
         })();

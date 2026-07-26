@@ -1,53 +1,52 @@
 name: Build Android Kotlin APK
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Compile native Kotlin APK
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Gradle
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: "8.7"
 
       - name: Build debug APK
-        run: gradle --no-daemon --stacktrace assembleDebug
+        run: gradle assembleDebug --no-daemon
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: colab-mobile-kotlin-debug-${{ github.run_number }}
           path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
           retention-days: 30
 
-      - name: Attach APK to release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Create release APK
+        if: startsWith(github.ref, "refs/tags/")
         uses: softprops/action-gh-release@v2
         with:
-          name: Colab Mobile Kotlin $${{ github.ref_name }}
+          name: Colab Mobile Kotlin ${{ github.ref_name }}
           files: app/build/outputs/apk/debug/app-debug.apk
-          body: Native Kotlin Android build of Colab Mobile.
+          body: |
+            Native Kotlin Android build of Colab Mobile.
+
+            Install the APK on Android and open Google Colab in desktop mode.

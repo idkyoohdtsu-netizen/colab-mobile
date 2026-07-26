@@ -3,6 +3,7 @@ package com.colabmobile
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -13,13 +14,12 @@ import android.webkit.WebViewClient
 @SuppressLint("SetJavaScriptEnabled")
 class ColabWebView(
     context: android.content.Context,
-    private val onEdgeSwipe: (fromLeft: Boolean) -> Unit,
 ) : WebView(context) {
-    private var downX = 0f
-    private var downY = 0f
-
     init {
-        setBackgroundColor(Color.rgb(16, 19, 27))
+        setBackgroundColor(Color.WHITE)
+        setInitialScale(100)
+        isVerticalScrollBarEnabled = true
+        isHorizontalScrollBarEnabled = true
         settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -28,12 +28,17 @@ class ColabWebView(
             builtInZoomControls = true
             displayZoomControls = false
             useWideViewPort = true
-            loadWithOverviewMode = true
+            // Keep the desktop canvas instead of shrinking it to the phone width.
+            loadWithOverviewMode = false
+            textZoom = 125
             mediaPlaybackRequiresUserGesture = false
             allowFileAccess = false
             allowContentAccess = true
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
             userAgentString = DESKTOP_CHROME_USER_AGENT
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                forceDark = WebSettings.FORCE_DARK_OFF
+            }
         }
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
@@ -52,27 +57,6 @@ class ColabWebView(
         }
         webChromeClient = WebChromeClient()
         loadUrl(COLAB_URL)
-    }
-
-    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
-        when (event.actionMasked) {
-            android.view.MotionEvent.ACTION_DOWN -> {
-                downX = event.x
-                downY = event.y
-            }
-            android.view.MotionEvent.ACTION_UP -> {
-                val distanceX = event.x - downX
-                val nearLeft = downX < 72
-                val nearRight = downX > width - 72
-                if (kotlin.math.abs(distanceX) > 150 &&
-                    kotlin.math.abs(distanceX) > kotlin.math.abs(event.y - downY) * 1.4f
-                ) {
-                    if (nearLeft && distanceX > 0) onEdgeSwipe(true)
-                    if (nearRight && distanceX < 0) onEdgeSwipe(false)
-                }
-            }
-        }
-        return super.onTouchEvent(event)
     }
 
     fun goBackIfPossible(): Boolean {
