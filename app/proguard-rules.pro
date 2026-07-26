@@ -1,0 +1,1 @@
+# The APK is intentionally small and uses only Android framework APIs.
